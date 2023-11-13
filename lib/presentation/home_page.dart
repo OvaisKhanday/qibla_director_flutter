@@ -30,7 +30,6 @@ class _HomePageState extends State<HomePage> {
     try {
       locationData = await locationService.getCurrentLocation();
       qiblaAngle = QiblaDirection.calculateQiblaDirection(locationData.latitude!, locationData.longitude!);
-      print('permissionInProcess --- false');
       setState(() {
         permissionGranted = true;
         permissionInProcess = false;
@@ -56,7 +55,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    print('init was called --------------->');
     _initialize();
     super.initState();
   }

@@ -16,13 +16,10 @@ class LocationService {
       }
     }
 
-    print('service is enabled');
     final permissionGranted = await requestPermission();
     if (permissionGranted == PermissionStatus.denied || permissionGranted == PermissionStatus.deniedForever) {
       throw Exception("Location Permission not granted");
     }
-
-    print('location permission granted');
 
     return await location.getLocation();
   }
