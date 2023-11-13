@@ -17,6 +17,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool permissionGranted = false;
+  bool permissionInProcess = true;
   String permissionMessage = "";
 
   double qiblaAngle = 0;
@@ -25,36 +26,38 @@ class _HomePageState extends State<HomePage> {
   LocationService locationService = LocationService();
   late LocationData locationData;
 
-  void _getLocationAngle() {
-    locationService.getCurrentLocation().then((location) {
-      locationData = location;
+  void _initialize() async {
+    try {
+      locationData = await locationService.getCurrentLocation();
       qiblaAngle = QiblaDirection.calculateQiblaDirection(locationData.latitude!, locationData.longitude!);
+      print('permissionInProcess --- false');
       setState(() {
         permissionGranted = true;
+        permissionInProcess = false;
       });
-    }).catchError((onError) {
+      magnetometerEvents.listen((event) {
+        double angleInDegrees = degrees(atan2(event.y, event.x)).roundToDouble();
+        // if angle is between [-1 to -180] it will change that to [359 to 180]
+        if (angleInDegrees < 0) angleInDegrees += 360;
+        //! delete this line in production
+        // print('compass angle is ::::::::::::::::::::::::::::::::: ' + angleInDegrees.toString());
+        setState(() {
+          compassAngle = angleInDegrees;
+        });
+      });
+    } catch (error) {
       setState(() {
+        permissionInProcess = false;
         permissionGranted = false;
-        permissionMessage = onError.message.toString();
+        permissionMessage = 'There was an error with location access';
       });
-    });
+    }
   }
 
   @override
   void initState() {
-    _getLocationAngle();
-
-    magnetometerEvents.listen((event) {
-      double angleInDegrees = degrees(atan2(event.y, event.x)).roundToDouble();
-      // if angle is between [-1 to -180] it will change that to [359 to 180]
-      if (angleInDegrees < 0) angleInDegrees += 360;
-      //! delete this line in production
-      // print('compass angle is ::::::::::::::::::::::::::::::::: ' + angleInDegrees.toString());
-      setState(() {
-        compassAngle = angleInDegrees;
-      });
-    });
-
+    print('init was called --------------->');
+    _initialize();
     super.initState();
   }
 
@@ -69,7 +72,12 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Spacer(),
-            qiblaWidget(),
+            QiblaCompassWidget(
+                permissionInProcess: permissionInProcess,
+                permissionGranted: permissionGranted,
+                permissionMessage: permissionMessage,
+                qiblaAngle: qiblaAngle,
+                compassAngle: compassAngle),
             const Spacer(),
             const Text(
               '"Put the phone on a flat surface and away from any magnetic field"\nThis is still in beta version',
@@ -79,22 +87,45 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 10),
-            const Text('Designed and Developed with ❤️ by Khanday Ovais'),
+            const Text(
+              'Designed and Developed with ❤️ by Khanday Ovais',
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 24)
           ],
         ));
   }
+}
 
-  Center qiblaWidget() {
+class QiblaCompassWidget extends StatelessWidget {
+  const QiblaCompassWidget({
+    super.key,
+    required this.permissionInProcess,
+    required this.permissionGranted,
+    required this.permissionMessage,
+    required this.qiblaAngle,
+    required this.compassAngle,
+  });
+
+  final bool permissionInProcess;
+  final bool permissionGranted;
+  final String permissionMessage;
+  final double qiblaAngle;
+  final double compassAngle;
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
-        child: !permissionGranted
-            ? Text(permissionMessage)
-            : Transform.rotate(
-                angle: radians(qiblaAngle - compassAngle + 90),
-                child: Image.asset(
-                  'assets/qibla_image.png',
-                  width: 200,
-                  height: 200,
-                )));
+        child: permissionInProcess
+            ? const CircularProgressIndicator.adaptive()
+            : (!permissionGranted
+                ? Text(permissionMessage)
+                : Transform.rotate(
+                    angle: radians(qiblaAngle - compassAngle + 90),
+                    child: Image.asset(
+                      'assets/qibla_image.png',
+                      width: 200,
+                      height: 200,
+                    ))));
   }
 }
