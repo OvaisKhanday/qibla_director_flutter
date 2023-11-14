@@ -15,13 +15,12 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   bool permissionGranted = false;
   bool permissionInProcess = true;
   String permissionMessage = "";
 
-  double qiblaAngle = 0;
-  double compassAngle = 0;
+  double rotationAngle = 360;
 
   LocationService locationService = LocationService();
   late LocationData locationData;
@@ -29,26 +28,33 @@ class _HomePageState extends State<HomePage> {
   void _initialize() async {
     try {
       locationData = await locationService.getCurrentLocation();
-      qiblaAngle = QiblaDirection.calculateQiblaDirection(locationData.latitude!, locationData.longitude!);
+      double qiblaAngle = QiblaDirection.calculateQiblaDirection(locationData.latitude!, locationData.longitude!);
       setState(() {
         permissionGranted = true;
         permissionInProcess = false;
+        print('permission granted:::' + permissionGranted.toString());
       });
       magnetometerEvents.listen((event) {
-        double angleInDegrees = degrees(atan2(event.y, event.x)).roundToDouble();
-        // if angle is between [-1 to -180] it will change that to [359 to 180]
+        double angleInDegrees = degrees(atan2(event.y, event.x));
         if (angleInDegrees < 0) angleInDegrees += 360;
-        //! delete this line in production
-        // print('compass angle is ::::::::::::::::::::::::::::::::: ' + angleInDegrees.toString());
+
         setState(() {
-          compassAngle = angleInDegrees;
+          rotationAngle = qiblaAngle - angleInDegrees + 90;
         });
+      }, onError: (error) {
+        throw Exception("Magnetometer Not found on your device");
+      });
+    } on Exception catch (error) {
+      setState(() {
+        permissionInProcess = false;
+        permissionGranted = false;
+        permissionMessage = error.toString();
       });
     } catch (error) {
       setState(() {
         permissionInProcess = false;
         permissionGranted = false;
-        permissionMessage = 'There was an error with location access';
+        permissionMessage = 'There was an error';
       });
     }
   }
@@ -56,74 +62,99 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     _initialize();
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    // builds++;
-    // print('-------------------------------------' + builds.toString());
     return Scaffold(
-        appBar: AppBar(title: const Center(child: Text('Qibla Director'))),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Spacer(),
-            QiblaCompassWidget(
-                permissionInProcess: permissionInProcess,
-                permissionGranted: permissionGranted,
-                permissionMessage: permissionMessage,
-                qiblaAngle: qiblaAngle,
-                compassAngle: compassAngle),
-            const Spacer(),
-            const Text(
-              '"Put the phone on a flat surface and away from any magnetic field"\nThis is still in beta version',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.red,
-              ),
+        // appBar: AppBar(title: const Center(child: Text('Qibla Director'))),
+        body: AnimatedContainer(
+      duration: const Duration(seconds: 1),
+      color: (rotationAngle > -2 && rotationAngle < 2)
+          ? const Color.fromARGB(160, 76, 175, 79)
+          : Theme.of(context).colorScheme.surface,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Spacer(),
+          QiblaCompassWidget(
+              permissionInProcess: permissionInProcess,
+              permissionGranted: permissionGranted,
+              permissionMessage: permissionMessage,
+              rotationAngle: rotationAngle),
+          const Spacer(),
+          const Text(
+            '"Put the phone on a flat surface and away from any magnetic field"\nThis is still in beta version',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.red,
             ),
-            const SizedBox(height: 10),
-            const Text(
-              'Designed and Developed with ❤️ by Khanday Ovais',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24)
-          ],
-        ));
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Designed and Developed with ❤️ by Khanday Ovais',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24)
+        ],
+      ),
+    ));
   }
 }
 
-class QiblaCompassWidget extends StatelessWidget {
+class QiblaCompassWidget extends StatefulWidget {
   const QiblaCompassWidget({
     super.key,
     required this.permissionInProcess,
     required this.permissionGranted,
     required this.permissionMessage,
-    required this.qiblaAngle,
-    required this.compassAngle,
+    required this.rotationAngle,
   });
 
   final bool permissionInProcess;
   final bool permissionGranted;
   final String permissionMessage;
-  final double qiblaAngle;
-  final double compassAngle;
+  final double rotationAngle;
+
+  @override
+  State<QiblaCompassWidget> createState() => _QiblaCompassWidgetState();
+}
+
+class _QiblaCompassWidgetState extends State<QiblaCompassWidget> with SingleTickerProviderStateMixin {
+  AnimationController? _animationController;
+
+  @override
+  void initState() {
+    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _animationController!.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Center(
-        child: permissionInProcess
+        child: widget.permissionInProcess
             ? const CircularProgressIndicator.adaptive()
-            : (!permissionGranted
-                ? Text(permissionMessage)
-                : Transform.rotate(
-                    angle: radians(qiblaAngle - compassAngle + 90),
-                    child: Image.asset(
-                      'assets/qibla_image.png',
-                      width: 200,
-                      height: 200,
-                    ))));
+            : (!widget.permissionGranted
+                ? Text(widget.permissionMessage)
+                : RotationTransition(
+                    alignment: Alignment.center,
+                    turns: _animationController!,
+                    child: Transform.rotate(
+                        angle: radians(widget.rotationAngle),
+                        child: Image.asset(
+                          'assets/qibla_image.png',
+                          width: 200,
+                          height: 200,
+                        )),
+                  )));
   }
 }

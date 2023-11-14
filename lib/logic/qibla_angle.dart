@@ -10,7 +10,7 @@ class QiblaDirection {
         cos(latitude * pi / 180) * tan(kaabaLatitude * pi / 180) -
             sin(latitude * pi / 180) * cos((kaabaLongitude - longitude) * pi / 180));
 
-    qiblaDirection = (qiblaDirection * 180 / pi).roundToDouble();
+    qiblaDirection = (qiblaDirection * 180 / pi);
 
     if (qiblaDirection < 0) {
       qiblaDirection += 360;
