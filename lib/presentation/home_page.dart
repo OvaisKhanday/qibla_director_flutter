@@ -32,7 +32,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       setState(() {
         permissionGranted = true;
         permissionInProcess = false;
-        print('permission granted:::' + permissionGranted.toString());
       });
       magnetometerEvents.listen((event) {
         double angleInDegrees = degrees(atan2(event.y, event.x));
@@ -73,7 +72,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         body: AnimatedContainer(
       duration: const Duration(seconds: 1),
       color: (rotationAngle > -2 && rotationAngle < 2)
-          ? const Color.fromARGB(160, 76, 175, 79)
+          ? Color.fromARGB(213, 76, 175, 79)
           : Theme.of(context).colorScheme.surface,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -105,7 +104,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 }
 
-class QiblaCompassWidget extends StatefulWidget {
+class QiblaCompassWidget extends StatelessWidget {
   const QiblaCompassWidget({
     super.key,
     required this.permissionInProcess,
@@ -120,41 +119,18 @@ class QiblaCompassWidget extends StatefulWidget {
   final double rotationAngle;
 
   @override
-  State<QiblaCompassWidget> createState() => _QiblaCompassWidgetState();
-}
-
-class _QiblaCompassWidgetState extends State<QiblaCompassWidget> with SingleTickerProviderStateMixin {
-  AnimationController? _animationController;
-
-  @override
-  void initState() {
-    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _animationController!.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Center(
-        child: widget.permissionInProcess
+        child: permissionInProcess
             ? const CircularProgressIndicator.adaptive()
-            : (!widget.permissionGranted
-                ? Text(widget.permissionMessage)
-                : RotationTransition(
-                    alignment: Alignment.center,
-                    turns: _animationController!,
-                    child: Transform.rotate(
-                        angle: radians(widget.rotationAngle),
-                        child: Image.asset(
-                          'assets/qibla_image.png',
-                          width: 200,
-                          height: 200,
-                        )),
-                  )));
+            : (!permissionGranted
+                ? Text(permissionMessage)
+                : Transform.rotate(
+                    angle: radians(rotationAngle),
+                    child: Image.asset(
+                      'assets/qibla_image.png',
+                      width: 200,
+                      height: 200,
+                    ))));
   }
 }
