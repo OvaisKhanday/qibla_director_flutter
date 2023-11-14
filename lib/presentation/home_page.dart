@@ -72,7 +72,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         body: AnimatedContainer(
       duration: const Duration(seconds: 1),
       color: (rotationAngle > -2 && rotationAngle < 2)
-          ? Color.fromARGB(213, 76, 175, 79)
+          ? const Color.fromARGB(213, 76, 175, 79)
           : Theme.of(context).colorScheme.surface,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
