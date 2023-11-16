@@ -67,13 +67,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
         // appBar: AppBar(title: const Center(child: Text('Qibla Director'))),
         body: AnimatedContainer(
       duration: const Duration(seconds: 1),
-      color: (rotationAngle > -2 && rotationAngle < 2)
-          ? const Color.fromARGB(213, 76, 175, 79)
-          : Theme.of(context).colorScheme.surface,
+      color: (rotationAngle > -2 && rotationAngle < 2) ? colorScheme.tertiaryContainer : colorScheme.surface,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -85,11 +84,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               permissionMessage: permissionMessage,
               rotationAngle: rotationAngle),
           const Spacer(),
-          const Text(
+          Text(
             '"Put the phone on a flat surface and away from any magnetic field"\nThis is still in beta version',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.red,
+              color: colorScheme.error,
             ),
           ),
           const SizedBox(height: 10),
@@ -120,6 +119,9 @@ class QiblaCompassWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String imagePath = Theme.of(context).brightness == Brightness.light
+        ? 'assets/qibla_image_light.png'
+        : 'assets/qibla_image_dark.png';
     return Center(
         child: permissionInProcess
             ? const CircularProgressIndicator.adaptive()
@@ -128,7 +130,7 @@ class QiblaCompassWidget extends StatelessWidget {
                 : Transform.rotate(
                     angle: radians(rotationAngle),
                     child: Image.asset(
-                      'assets/qibla_image.png',
+                      imagePath,
                       width: 200,
                       height: 200,
                     ))));

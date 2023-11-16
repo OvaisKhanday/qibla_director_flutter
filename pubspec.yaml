@@ -60,7 +60,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/qibla_image.png
+    - assets/qibla_image_light.png
+    - assets/qibla_image_dark.png
     - assets/ic_launcher.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
