@@ -78,11 +78,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Spacer(),
-          QiblaCompassWidget(
-              permissionInProcess: permissionInProcess,
-              permissionGranted: permissionGranted,
-              permissionMessage: permissionMessage,
-              rotationAngle: rotationAngle),
+          RepaintBoundary(
+            child: QiblaCompassWidget(
+                permissionInProcess: permissionInProcess,
+                permissionGranted: permissionGranted,
+                permissionMessage: permissionMessage,
+                rotationAngle: rotationAngle),
+          ),
           const Spacer(),
           Text(
             '"Put the phone on a flat surface and away from any magnetic field"\nThis is still in beta version',
