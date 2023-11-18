@@ -9,17 +9,25 @@ class LocationService {
     return permission;
   }
 
+  Future<bool> _requestService({int limit = 20}) async {
+    for (var i = 0; i < limit; i++) {
+      try {
+        return await location.serviceEnabled();
+      } catch (e) {
+        // do nothing
+      }
+    }
+    return false;
+  }
+
   Future<LocationData> getCurrentLocation() async {
     try {
-      final serviceEnabled = await location.serviceEnabled();
-      await Future.delayed(const Duration(microseconds: 100));
+      final serviceEnabled = await _requestService();
       if (!serviceEnabled) {
         if (await location.requestService() == false) {
           throw Exception('GPS service not enabled');
         }
       }
-    } on PlatformException catch (_) {
-      throw Exception('Error in getting location service');
     } catch (e) {
       throw Exception('Error in getting location service');
     }
