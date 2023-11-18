@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:location/location.dart';
 
 class LocationService {
@@ -9,11 +10,18 @@ class LocationService {
   }
 
   Future<LocationData> getCurrentLocation() async {
-    final serviceEnabled = await location.serviceEnabled();
-    if (!serviceEnabled) {
-      if (await location.requestService() == false) {
-        throw Exception('GPS service not enabled');
+    try {
+      final serviceEnabled = await location.serviceEnabled();
+      await Future.delayed(const Duration(microseconds: 100));
+      if (!serviceEnabled) {
+        if (await location.requestService() == false) {
+          throw Exception('GPS service not enabled');
+        }
       }
+    } on PlatformException catch (_) {
+      throw Exception('Error in getting location service');
+    } catch (e) {
+      throw Exception('Error in getting location service');
     }
 
     final permissionGranted = await requestPermission();
